@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: my-app
+  labels:
+    app: my-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name:  multitool
+        image: wbitt/network-multitool:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: my-pv-volume
+            mountPath: /data
+      - name:  busybox
+        image: busybox:latest
+        command: ['sh', '-c', 'while true; do date +%s >> /home/sharedfile.txt; sleep 5; done']
+        volumeMounts:
+          - name: my-pv-volume
+            mountPath: /home
+      volumes:
+        - name: my-pv-volume
+          persistentVolumeClaim:
+            claimName: my-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pvc
+spec:
+  storageClassName: my-storage-class
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: my-storage-class
+provisioner: microk8s.io/hostpath
+volumeBindingMode: WaitForFirstConsumer
