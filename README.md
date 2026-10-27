@@ -1,128 +1,115 @@
-# «Запуск приложений в K8S»
+# «Настройка приложений и управление доступом в Kubernetes»
+
+### Примерное время выполнения задания
+
+120 минут
 
 ### Цель задания
 
-В тестовой среде для работы с Kubernetes, установленной в предыдущем ДЗ, необходимо развернуть Deployment с приложением, состоящим из нескольких контейнеров, и масштабировать его.
+Научиться:
+- Настраивать конфигурацию приложений с помощью **ConfigMaps** и **Secrets**
+- Управлять доступом пользователей через **RBAC**
+
+Это задание поможет вам освоить ключевые механизмы Kubernetes для работы с конфигурацией и безопасностью. Эти навыки необходимы для уверенного администрирования кластеров в реальных проектах. На практике навыки используются для:
+- Хранения чувствительных данных (Secrets)
+- Гибкого управления настройками приложений (ConfigMaps) 
+- Контроля доступа пользователей и сервисов (RBAC)
 
 ------
 
-### Чеклист готовности к домашнему заданию
-
-1. Установленное k8s-решение (например, MicroK8S).
-2. Установленный локальный kubectl.
-3. Редактор YAML-файлов с подключённым git-репозиторием.
+## **Подготовка**
+### **Чеклист готовности**
+- Установлен Kubernetes (MicroK8S, Minikube или другой)
+- Установлен `kubectl`
+- Редактор для YAML-файлов (VS Code, Vim и др.)
+- Утилита `openssl` для генерации сертификатов
 
 ------
 
-### Инструменты и дополнительные материалы, которые пригодятся для выполнения задания
+### Инструменты, которые пригодятся для выполнения задания
 
-1. [Описание](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) Deployment и примеры манифестов.
-2. [Описание](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) Init-контейнеров.
+1. [Инструкция](https://microk8s.io/docs/getting-started) по установке MicroK8S
+2. [Инструкция](https://minikube.sigs.k8s.io/docs/start/) по установке Minikube
+3. [Инструкция](https://kubernetes.io/docs/tasks/tools/) по установке kubectl
+4. [Инструкция](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools) по установке VS Code
+
+### Дополнительные материалы, которые пригодятся для выполнения задания
+
+1. [Описание](https://kubernetes.io/docs/concepts/configuration/secret/) Secret.
+2. [Описание](https://kubernetes.io/docs/concepts/configuration/configmap/) ConfigMap.
 3. [Описание](https://github.com/wbitt/Network-MultiTool) Multitool.
+4. [Описание](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) RBAC.
+5. [Пользователи и авторизация RBAC в Kubernetes](https://habr.com/ru/company/flant/blog/470503/).
+6. [RBAC with Kubernetes in Minikube](https://medium.com/@HoussemDellai/rbac-with-kubernetes-in-minikube-4deed658ea7b).
 
 ------
 
-### Задание 1. Создать Deployment и обеспечить доступ к репликам приложения из другого Pod
+## **Задание 1: Работа с ConfigMaps**
+### **Задача**
+Развернуть приложение (nginx + multitool), решить проблему конфигурации через ConfigMap и подключить веб-страницу.
 
-1. Создать Deployment приложения, состоящего из двух контейнеров — nginx и multitool. Решить возникшую ошибку.
+### **Шаги выполнения**
+1. **Создать Deployment** с двумя контейнерами
+   - `nginx`
+   - `multitool`
+3. **Подключить веб-страницу** через ConfigMap
+4. **Проверить доступность**
+
+### **Что сдать на проверку**
+- Манифесты:
+  - `deployment.yaml`
+  - `configmap-web.yaml`
+- Скриншот вывода `curl` или браузера
+
+![task1](task1.png)
+
+---
+## **Задание 2: Настройка HTTPS с Secrets**  
+### **Задача**  
+Развернуть приложение с доступом по HTTPS, используя самоподписанный сертификат.
+
+### **Шаги выполнения**  
+1. **Сгенерировать SSL-сертификат**
+```bash
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout tls.key -out tls.crt -subj "/CN=myapp.example.com"
 ```
-apiVersion: apps/v1
-kind: Deployment
-metadata: 
-  name: nginx-deployment
-  labels:
-    app: nginx
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:1.14.2
-        ports:
-        - containerPort: 80
-      - name:  multitool
-        image: wbitt/network-multitool:latest
-        env:
-        - name: HTTP_PORT
-          value: "8080"
-        ports:
-        - containerPort: 8080
+2. **Создать Secret**
+3. **Настроить Ingress**
+4. **Проверить HTTPS-доступ**
 
+### **Что сдать на проверку**  
+- Манифесты:
+  - `secret-tls.yaml`
+  - `ingress-tls.yaml`
+- Скриншот вывода `curl -k`
+
+![task2](task2.png)
+
+---
+## **Задание 3: Настройка RBAC**  
+### **Задача**  
+Создать пользователя с ограниченными правами (только просмотр логов и описания подов).
+
+### **Шаги выполнения**  
+1. **Включите RBAC в microk8s**
+```bash
+microk8s enable rbac
 ```
-
-2. После запуска увеличить количество реплик работающего приложения до 2.
-3. Продемонстрировать количество подов до и после масштабирования.
-![task1-1](task1-1.png)
-
-4. Создать Service, который обеспечит доступ до реплик приложений из п.1.
-5. Создать отдельный Pod с приложением multitool и убедиться с помощью `curl`, что из пода есть доступ до приложений из п.1.
-
-![task1-2](task1-2.png)
-------
-
-### Задание 2. Создать Deployment и обеспечить старт основного контейнера при выполнении условий
-
-1. Создать Deployment приложения nginx и обеспечить старт контейнера только после того, как будет запущен сервис этого приложения.
-2. Убедиться, что nginx не стартует. В качестве Init-контейнера взять busybox.
+2. **Создать SSL-сертификат для пользователя**
+```bash
+openssl genrsa -out developer.key 2048
+openssl req -new -key developer.key -out developer.csr -subj "/CN={ИМЯ ПОЛЬЗОВАТЕЛЯ}"
+openssl x509 -req -in developer.csr -CA {CA серт вашего кластера} -CAkey {CA ключ вашего кластера} -CAcreateserial -out developer.crt -days 365
 ```
-apiVersion: apps/v1
-kind: Deployment
-metadata: 
-  name: nginx-deployment
-  labels:
-    app: nginx
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:1.14.2
-        ports:
-        - containerPort: 80
-      initContainers:
-      - name: busybox
-        image: busybox:1.28
-        command: ['sh', '-c', 'until nslookup nginx-service.apps.svc.cluster.local; do echo waiting for nginx-service; sleep 2; done']
-```
+3. **Создать Role (только просмотр логов и описания подов) и RoleBinding**
+4. **Проверить доступ**
 
-3. Создать и запустить Service. Убедиться, что Init запустился.
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx-service
-spec:
-  selector:
-    app: nginx
-  ports:
-  - name: http
-    protocol: TCP
-    port: 80
-```
+### **Что сдать на проверку**  
+- Манифесты:
+  - `role-pod-reader.yaml`
+  - `rolebinding-developer.yaml`
+- Команды генерации сертификатов
+- Скриншот проверки прав (`kubectl get pods --as=developer`)
 
-4. Продемонстрировать состояние пода до и после запуска сервиса.
-![init](init.png)
-
-------
-
-### Правила приема работы
-
-1. Домашняя работа оформляется в своем Git-репозитории в файле README.md. Выполненное домашнее задание пришлите ссылкой на .md-файл в вашем репозитории.
-2. Файл README.md должен содержать скриншоты вывода необходимых команд `kubectl` и скриншоты результатов.
-3. Репозиторий должен содержать файлы манифестов и ссылки на них в файле README.md.
-
-------
+![task3](task3.png)
