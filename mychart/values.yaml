@@ -1,0 +1,34 @@
+replicaCount: 1
+
+image:
+  repository: nginx
+  #tag: 1.24.0
+  #tag: 1.25.0
+  tag: 1.30.0
+
+service:
+  port: 80
+
+autoscaling:
+  enabled: false
+
+volumes:
+  - name: config
+    configMap:
+      name: my-app-configmap
+
+volumeMounts:
+  - name: config
+    mountPath: /usr/share/nginx/html/
+    readOnly: true
+
+ingress:
+  enabled: true
+  hosts:
+    - host: mysite3.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+httpRoute:
+  enabled: false
