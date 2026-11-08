@@ -19,62 +19,11 @@ Rolling-Update не подходят из-за сосуществования р
 Поэтому остается Recreate. Но его нужно провдить в часы минимальной загрузки.
 ------
 
-### Задание 2. Создать Deployment и обеспечить старт основного контейнера при выполнении условий
+### Задание 2. Обновить приложение
 
-1. Создать Deployment приложения nginx и обеспечить старт контейнера только после того, как будет запущен сервис этого приложения.
-2. Убедиться, что nginx не стартует. В качестве Init-контейнера взять busybox.
-```
-apiVersion: apps/v1
-kind: Deployment
-metadata: 
-  name: nginx-deployment
-  labels:
-    app: nginx
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:1.14.2
-        ports:
-        - containerPort: 80
-      initContainers:
-      - name: busybox
-        image: busybox:1.28
-        command: ['sh', '-c', 'until nslookup nginx-service.apps.svc.cluster.local; do echo waiting for nginx-service; sleep 2; done']
-```
-
-3. Создать и запустить Service. Убедиться, что Init запустился.
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx-service
-spec:
-  selector:
-    app: nginx
-  ports:
-  - name: http
-    protocol: TCP
-    port: 80
-```
-
-4. Продемонстрировать состояние пода до и после запуска сервиса.
-![init](init.png)
-
-------
-
-### Правила приема работы
-
-1. Домашняя работа оформляется в своем Git-репозитории в файле README.md. Выполненное домашнее задание пришлите ссылкой на .md-файл в вашем репозитории.
-2. Файл README.md должен содержать скриншоты вывода необходимых команд `kubectl` и скриншоты результатов.
-3. Репозиторий должен содержать файлы манифестов и ссылки на них в файле README.md.
-
+1. Создать Deployment приложения с контейнерами nginx и multitool (образ wbitt/network-multitool). Версию nginx взять 1.19. Количество реплик — 5.
+2. Для multitool задайте HTTP_PORT и HTTPS_PORT, отличные от портов nginx, чтобы избежать конфликта.
+3. Обновить версию nginx в приложении до версии 1.20, сократив время обновления до минимума. Приложение должно быть доступно.
+4. Попытаться обновить nginx до заведомо несуществующей версии (например, 1.50); приложение должно оставаться доступным.
+5. Откатиться после неудачного обновления.
 ------
